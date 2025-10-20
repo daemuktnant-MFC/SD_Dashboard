@@ -74,11 +74,15 @@ if uploaded_file is not None:
         # --- เตรียมข้อมูลสำหรับกราฟ ---
         payment_counts = df['Payment Code'].value_counts().reset_index()
         payment_counts.columns = ['Payment Code', 'Count']
+
+        # 💡 ส่วนที่แก้ไข: กรอง Order ที่สถานะไม่ใช่ 'CANCEL' ก่อนนับรวม
+        df_non_cancel = df[df['Status'] != 'CANCEL']
         
-        rider_order_counts = df.groupby('Rider Name')['Order ID'].nunique().reset_index()
+        rider_order_counts = df_non_cancel.groupby('Rider Name')['Order ID'].nunique().reset_index()
         rider_order_counts.columns = ['Rider Name', 'Total Orders']
         rider_order_counts = rider_order_counts.sort_values(by='Total Orders', ascending=False)
         rider_order_counts = rider_order_counts.dropna(subset=['Rider Name'])
+        # ---------------------------
 
         # --- แสดงผลกราฟ (แถวกลาง) - ปรับอัตราส่วนคอลัมน์เป็น (1, 2) ---
         chart_col1, chart_col2 = st.columns((1, 2)) 
