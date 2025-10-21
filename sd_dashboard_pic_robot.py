@@ -134,7 +134,7 @@ if uploaded_file is not None:
                 st.markdown(
                     f"""
                     <div style='text-align:center'>
-                        <img src='data:image/{robot_format};base64,{robot_base64}' width='400'> 
+                        <img src='data:image/{robot_format};base64,{robot_base64}' width='500'> 
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -403,4 +403,5 @@ if uploaded_file is not None:
 else:
     # --- หน้าจอเริ่มต้น เมื่อยังไม่มีการอัปโหลดไฟล์ ---
     st.info("👋 กรุณาอัปโหลดไฟล์ Excel ของคุณที่ Sidebar ด้านซ้ายเพื่อเริ่มต้นใช้งาน")
+
 
