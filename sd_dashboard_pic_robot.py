@@ -5,28 +5,62 @@ import plotly.graph_objects as go
 import io
 import math
 import base64
-from plotly.subplots import make_subplots # 💥 ต้องมี make_subplots
+import requests 
+from plotly.subplots import make_subplots 
 from PIL import Image
 from io import BytesIO
 
 
 # --- ตั้งค่าหน้าเว็บ (Page Config) ---
-st.set_page_config(page_title="SD Monitoring Dashboard", page_icon="📊", layout="wide")
+st.set_page_config(page_title="MFC SD Monitoring Dashboard", page_icon="📊", layout="wide")
 
-# --- ฟังก์ชันแปลงภาพเป็น Base64 ---
-def get_base64_image(img_path):
-    with open(img_path, "rb") as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
+# 💥 แก้ไข: เพิ่ม verify=False ใน requests.get() เพื่อแก้ปัญหา SSL 💥
+def get_base64_image(img_source): 
+    data = None
+    image_format = "png" # Default format
 
-# --- ฝังรูปหุ่นยนต์ถาวร (ใส่ path ของไฟล์ภาพที่คุณอัปโหลด) ---
-robot_base64 = get_base64_image(r"C:\Users\th40182263\Desktop\Streamlit\Robot_pic.png")
+    if img_source.startswith("http"):
+        # ถ้าเป็น URL (Web Link)
+        try:
+            # 💥 แก้ไข: เพิ่ม verify=False เพื่อหลีกเลี่ยง SSLError 💥
+            response = requests.get(img_source, timeout=10, verify=False) 
+            response.raise_for_status() # เช็คว่าดาวน์โหลดสำเร็จหรือไม่
+            data = response.content
+            # พยายามดึงนามสกุลไฟล์จาก URL
+            format_ext = img_source.split('.')[-1].lower()
+            if format_ext in ['png', 'jpg', 'jpeg', 'gif']:
+                 image_format = format_ext.replace('jpg', 'jpeg')
+        except requests.exceptions.RequestException as e:
+            st.error(f"Error downloading image from URL: {img_source} - {e}") 
+            st.warning("คำแนะนำ: หากยังเกิด Error อีก อาจต้องอัปโหลดรูปภาพผ่าน st.file_uploader แทน")
+            return None, "png"
+    else:
+        # ถ้าเป็น Local Path
+        try:
+            with open(img_source, "rb") as f:
+                data = f.read()
+            format_ext = img_source.split('.')[-1].lower()
+            if format_ext in ['png', 'jpg', 'jpeg', 'gif']:
+                 image_format = format_ext.replace('jpg', 'jpeg')
+        except FileNotFoundError:
+            st.error(f"Error: Local image file not found at {img_source}")
+            return None, "png"
+
+    if data:
+        # คืนค่า Base64 และรูปแบบภาพ
+        return base64.b64encode(data).decode(), image_format
+    return None, "png"
+
+
+# --- ฝังรูปหุ่นยนต์ถาวร (ใส่ URL ของไฟล์ภาพที่คุณอัปโหลด) ---
+# 💥 แก้ไข: ต้องใช้ Raw Link (รูปแบบ https://raw.githubusercontent.com/...)
+ROBOT_IMAGE_URL = "https://raw.githubusercontent.com/daemuktnant-MFC/streamlit-assets/main/Robot_pic.png" 
+robot_base64, robot_format = get_base64_image(ROBOT_IMAGE_URL) # 💥 รับค่า Base64 และ Format
 
 # --- ส่วนหัว Dashboard พร้อมรูปหุ่นยนต์ ---
 col_title, col_img = st.columns([4, 1])
 with col_title:
-    st.title("📊 SD Monitoring Dashboard")
-#เพิ่ม column ได้อีก
+    st.title("📊 MFC SD Monitoring Dashboard")
 
 # 💥 ส่วนที่เพิ่ม: Custom CSS สำหรับ KPI 💥
 st.markdown("""
@@ -38,7 +72,7 @@ div[data-testid="stMetricValue"] {
 }
 /* ปรับขนาดชื่อหัวข้อ KPI */
 div[data-testid="stMetricLabel"] {
-    font-size: 80px; /* 💥 ชื่อหัวข้อ KPI ใหญ่ขึ้น */
+    font-size: 16px; /* 💥 ชื่อหัวข้อ KPI ใหญ่ขึ้น */
 }
 </style>
 """, unsafe_allow_html=True)
@@ -73,13 +107,13 @@ if uploaded_file is not None:
         # --- คำนวณ KPIs ---
         total_orders = df['Order ID'].nunique()
         total_value = df['Net Order Value'].sum()
-        rounded_total_value = math.ceil(total_value)# 💥 ส่วนที่เพิ่ม/แก้ไข: ปัด Total Value ขึ้นและแปลงเป็นจำนวนเต็ม
+        rounded_total_value = math.ceil(total_value) # 💥 ปัด Total Value ขึ้น
         total_complete = df[df['Status'] == 'COMPLETE'].shape[0]
-        total_on_process = total_orders - total_complete # 💥 ส่วนที่เพิ่ม: คำนวณ On Process
+        total_on_process = total_orders - total_complete # 💥 คำนวณ On Process
         total_unsuccessful = df[df['Status'] == 'UNSUCCESSFUL ON DEMAND DELIVERY'].shape[0]
         total_riders = df['Rider Name'].nunique()
 
-        # --- แสดงผล KPIs (แถวบนสุด) - แก้ไขเป็น 5 คอลัมน์ ---
+        # --- แสดงผล KPIs (แถวบนสุด) - แก้ไขเป็น 7 คอลัมน์ ---
         kpi_col1, kpi_col2, kpi_col3, kpi_col4, kpi_col5, kpi_col6, kpi_col7 = st.columns(7)
 
         with kpi_col1:
@@ -93,16 +127,21 @@ if uploaded_file is not None:
         with kpi_col5:
             st.metric(label="Total Rider", value=f"{total_riders:,}")
         with kpi_col6:
-            st.metric(label="Total Value", value=f"{rounded_total_value:,}")
+            st.metric(label="Total Value", value=f"{rounded_total_value:,}") # 💥 ใช้ค่าที่ปัดแล้ว
         with kpi_col7:
-            st.markdown(
-                f"""
-                <div style='text-align:center'>
-                    <img src='data:image/png;base64,{robot_base64}' width='300'>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+            # 💥 ส่วนนี้ใช้รูปหุ่นยนต์จากด้านบน แต่ปรับ width ให้เข้ากับ kpi_col7 (200px แทน 300px)
+            if robot_base64:
+                st.markdown(
+                    f"""
+                    <div style='text-align:center'>
+                        <img src='data:image/{robot_format};base64,{robot_base64}' width='400'> 
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.info("No Image")
+
 
         # --- สร้าง Divider ---
         st.markdown("---")
@@ -208,7 +247,7 @@ if uploaded_file is not None:
                 top_riders,
                 x='Total Orders',  
                 y='Rider Name',    
-                orientation='h',   
+                orientation='h',    
                 text='Total Orders', 
                 labels={'Total Orders': 'Number of Orders', 'Rider Name': 'Rider Name'},
                 color='Total Orders', 
@@ -252,11 +291,11 @@ if uploaded_file is not None:
 
             # --- กำหนดแผนที่สีใหม่ ---
             color_map = {
-                'Within SLA': '#0099FF',     
+                'Within SLA': '#0099FF',      
                 'Over SLA': '#FF3300',        
-                'Dispatched': '#CC00FF',   
+                'Dispatched': '#CC00FF',    
                 'Pending': '#8ED973',        
-                'Cancel': '#B2B2B2'         
+                'Cancel': '#B2B2B2'          
             }
 
             # 1. สร้าง Figure ด้วย Subplots เพื่อรองรับ Secondary Y-Axis
