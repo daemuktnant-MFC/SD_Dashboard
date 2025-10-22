@@ -227,6 +227,7 @@ if uploaded_file is not None:
                     textposition='inside',
                     textinfo='percent+label',
                     rotation=270,
+                    insidetextorientation='horizontal',
                     pull=[0.05 if s == 'Over SLA' else 0 for s in sla_counts['SLA STS']],
                     textfont=dict(size=40),
                     marker=dict(
@@ -411,6 +412,7 @@ if uploaded_file is not None:
 else:
     # --- หน้าจอเริ่มต้น เมื่อยังไม่มีการอัปโหลดไฟล์ ---
     st.info("👋 กรุณาอัปโหลดไฟล์ Excel ของคุณที่ Sidebar ด้านซ้ายเพื่อเริ่มต้นใช้งาน")
+
 
 
 
