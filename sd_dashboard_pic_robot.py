@@ -12,7 +12,19 @@ from io import BytesIO
 
 
 # --- ตั้งค่าหน้าเว็บ (Page Config) ---
-st.set_page_config(page_title="MFC SD Monitoring Dashboard", page_icon="📊", layout="wide")
+st.set_page_config(layout="wide")
+
+# --- ✅ ส่วนที่แก้ไข: จัดรูปภาพและข้อความให้อยู่บรรทัดเดียวกัน ---
+col1, col2 = st.columns([1, 10])
+
+with col1:
+    st.image("https://raw.githubusercontent.com/daemuktnant-MFC/streamlit-assets/main/Rider_pic.png", width=80)
+
+with col2:
+    # เปลี่ยนจาก st.title เป็น st.header เพื่อให้ขนาดใกล้เคียงกับรูปภาพที่จัดวาง
+    # หรือใช้ st.markdown("<h1 style='margin-top: 0;'>MFC SD Monitoring Dashboard</h1>", unsafe_allow_html=True)
+    # แต่ st.header น่าจะเหมาะสมที่สุดสำหรับการจัดวางแนวนอน
+    st.header("MFC SD Monitoring Dashboard")
 
 # 💥 แก้ไข: เพิ่ม verify=False ใน requests.get() เพื่อแก้ปัญหา SSL 💥
 def get_base64_image(img_source): 
@@ -56,11 +68,6 @@ def get_base64_image(img_source):
 # 💥 แก้ไข: ต้องใช้ Raw Link (รูปแบบ https://raw.githubusercontent.com/...)
 ROBOT_IMAGE_URL = "https://raw.githubusercontent.com/daemuktnant-MFC/streamlit-assets/main/Robot_pic.png" 
 robot_base64, robot_format = get_base64_image(ROBOT_IMAGE_URL) # 💥 รับค่า Base64 และ Format
-
-# --- ส่วนหัว Dashboard พร้อมรูปหุ่นยนต์ ---
-col_title, col_img = st.columns([4, 1])
-with col_title:
-    st.title("📊 MFC SD Monitoring Dashboard")
 
 # 💥 ส่วนที่เพิ่ม: Custom CSS สำหรับ KPI 💥
 st.markdown("""
@@ -404,6 +411,7 @@ if uploaded_file is not None:
 else:
     # --- หน้าจอเริ่มต้น เมื่อยังไม่มีการอัปโหลดไฟล์ ---
     st.info("👋 กรุณาอัปโหลดไฟล์ Excel ของคุณที่ Sidebar ด้านซ้ายเพื่อเริ่มต้นใช้งาน")
+
 
 
 
